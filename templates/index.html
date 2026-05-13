@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知乎问答拆解分析系统</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            background: #050505;
+            min-height: 100vh;
+            padding: 20px;
+            color: #0f0;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.15) 2px,
+                rgba(0, 0, 0, 0.15) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 255, 0, 0.02);
+            pointer-events: none;
+            z-index: 999;
+            animation: flicker 0.1s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 0.97; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 20px rgba(0, 255, 0, 0.05);
+            background: #020202;
+        }
+
+        .header h1 {
+            color: #0f0;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #0f0;
+            letter-spacing: 2px;
+        }
+
+        .header p {
+            color: #ff6600;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .terminal-text {
+            color: #0f0;
+            background: #020202;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            padding: 1rem;
+            border-left: 3px solid #0f0;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            white-space: pre;
+            margin-bottom: 15px;
+        }
+
+        .hot-section {
+            margin-bottom: 30px;
+            border: 1px solid #0f0;
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+            background: #020202;
+        }
+
+        .section-title {
+            color: #ff6600;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: ">";
+            color: #0f0;
+        }
+
+        .refresh-btn {
+            background: transparent;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            margin-left: auto;
+            transition: all 0.2s;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+        }
+        .refresh-btn:hover {
+            background: #0f0;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        }
+
+        .logout-btn:hover {
+            background: #ff6600;
+            color: #050505;
+            box-shadow: 0 0 10px rgba(255, 102, 0, 0.6);
+        }
+
+        .question-card {
+            border: 1px solid #003300;
+            margin-bottom: 12px;
+            background: #020202;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .question-card:hover {
+            border-color: #0f0;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .card-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #003300;
+        }
+
+        .card-title {
+            flex: 1;
+            font-size: 0.95rem;
+            color: #0f0;
+            line-height: 1.5;
+            padding-right: 15px;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 15px;
+            color: #ff6600;
+            font-size: 0.8rem;
+        }
+
+        .card-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-details {
+            display: none;
+            padding: 15px;
+            background: #030303;
+        }
+
+        .card-details.active {
+            display: block;
+        }
+
+        .detail-content {
+            font-size: 0.9rem;
+            color: #aaa;
+            line-height: 1.7;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+
+        .analyze-btn {
+            background: transparent;
+            color: #ff6600;
+            border: 1px solid #ff6600;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            box-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
+        }
+
+        .analyze-btn:hover {
+            background: #ff6600;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(255, 102, 0, 0.6);
+        }
+
+        .search-section {
+            background: #020202;
+            border: 1px solid #0f0;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        .search-section h3 {
+            color: #ff6600;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #003300;
+            background: #030303;
+            color: #0f0;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #0f0;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .search-input::placeholder {
+            color: #555;
+        }
+
+        .search-btn {
+            background: transparent;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: inherit;
+            white-space: nowrap;
+            transition: all 0.2s;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+        }
+
+        .search-btn:hover {
+            background: #0f0;
+            color: #050505;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        }
+
+        .analysis-result {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #020202;
+            border: 1px solid #003300;
+        }
+
+        .analysis-result.active {
+            display: block;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+        }
+        .progress-step {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 6px 0;
+            font-size: 0.85rem;
+            color: #555;
+            transition: all 0.3s ease;
+        }
+        .progress-step.pending { color: #555; }
+        .progress-step.running { color: #ff6600; }
+        .progress-step.done { color: #0f0; }
+        .progress-step.error { color: #ff3333; }
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            border: 1px solid currentColor;
+        }
+        .step-icon.pending { color: #555; }
+        .step-icon.running { color: #ff6600; animation: pulse 1s infinite; }
+        .step-icon.done { color: #0f0; }
+        .step-icon.error { color: #ff3333; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .knowledge-cards {
+            margin-top: 20px;
+        }
+
+        .knowledge-card {
+            background: #030303;
+            border: 1px solid #003300;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 3px solid #0f0;
+        }
+
+        .knowledge-card h4 {
+            color: #0f0;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .knowledge-card p, .knowledge-card ul, .knowledge-card pre {
+            color: #aaa;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .knowledge-card ul {
+            margin-left: 20px;
+        }
+
+        .new-angle {
+            background: #020202;
+            color: #ff6600;
+            padding: 15px;
+            border: 1px solid #ff6600;
+            margin-top: 15px;
+            box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+        }
+
+        .new-angle h4 {
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            color: #ff6600;
+        }
+
+        .new-angle p {
+            line-height: 1.7;
+            color: #ccc;
+        }
+
+        .mock-badge {
+            background: transparent;
+            color: #ff6600;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border: 1px solid #ff6600;
+            margin-left: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #0f0;
+        }
+        .loading::before {
+            content: "[ LOADING... ]";
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .thinking-pulse {
+            animation: blink 1.5s infinite;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 1rem;
+            }
+
+            .header p {
+                font-size: 0.75rem;
+            }
+
+            .header > div {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            #auth-section {
+                width: 100%;
+                text-align: left;
+            }
+
+            #user-info {
+                display: inline;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .card-meta {
+                flex-wrap: wrap;
+            }
+
+            .card-meta span {
+                word-break: break-all;
+                font-size: 0.75rem;
+            }
+
+            .card-title {
+                font-size: 0.85rem;
+                padding-right: 0;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <h1>[ SYSTEM ] 知乎问答拆解分析</h1>
+                    <p>> Karpatkey LLM WIKI · 智能拆解 · 新角度推荐</p>
+                </div>
+                <div id="auth-section" style="text-align:right;flex-shrink:0;">
+                    <!-- 未登录显示登录按钮 -->
+                    <a id="login-btn" href="/auth/zhihu" style="background:transparent;color:#0f0;border:1px solid #0f0;padding:5px 12px;cursor:pointer;font-size:0.8rem;text-decoration:none;white-space:nowrap;">[ LOGIN ]</a>
+                    <!-- 登录后显示用户信息 -->
+                    <span id="user-info" style="display:none;align-items:center;">
+                        <img id="user-avatar" src="" style="width:32px;height:32px;border-radius:50%;border:2px solid #0f0;vertical-align:middle;margin-right:6px;">
+                        <span id="user-name" style="color:#0f0;vertical-align:middle;margin-right:8px;font-size:0.85rem;"></span>
+                        <button class="logout-btn" onclick="logout()" style="background:transparent;color:#ff6600;border:1px solid #ff6600;padding:4px 8px;cursor:pointer;font-size:0.75rem;white-space:nowrap;">[ LOGOUT ]</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="hot-section">
+            <div class="section-title">
+                <span>HOT LIST // 前3</span>
+                <button class="refresh-btn" onclick="loadHotQuestions(true)" title="刷新热榜">[ REFRESH ]</button>
+            </div>
+            <div id="hot-questions">
+                <div class="loading"></div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <h3>> 搜索问题</h3>
+            <div class="search-box">
+                <input type="text" class="search-input" id="question-input" placeholder="输入问题（如：迪士尼的速通机制，为什么会让一部分人破防？）">
+                <button class="search-btn" onclick="searchQuestion()">[ SEARCH ]</button>
+            </div>
+            <div id="search-result" class="analysis-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const MOCK_HOT = [
+            {id: "2036558081312679727", title: "职场中，为什么有些能力最强的人往往最先离职？", excerpt: "在职场中，我们常常会发现这样一个现象：那些能力最强、业绩最好的人，反而更容易选择离开...", voteup_count: 15420, comment_count: 892},
+            {id: "3996888392882994975", title: "为什么说年轻人不应该躺平？", excerpt: "躺平，这个词在2021年迅速走红，成为网络上热议的话题。年轻人选择躺平，究竟是...", voteup_count: 12350, comment_count: 654},
+            {id: "510842294288583219", title: "月薪多少才能让你在北上广深过上体面的生活？", excerpt: "北上广深作为中国最发达的四座城市，吸引了无数年轻人前来奋斗。但在这背后...", voteup_count: 11200, comment_count: 1102}
+        ];
+
+        async function loadHotQuestions(forceRefresh) {
+            const container = document.getElementById('hot-questions');
+            const btn = document.querySelector('.refresh-btn');
+
+            // 如果不是强制刷新，先尝试从本地存储读取
+            if (!forceRefresh) {
+                const cached = localStorage.getItem('zhihu_hot_questions');
+                if (cached) {
+                    try {
+                        const questions = JSON.parse(cached);
+                        renderQuestions(questions, false);
+                        return;
+                    } catch (e) {}
+                }
+            }
+
+            // 需要更新或没有缓存
+            if (btn) {
+                btn.classList.add('loading');
+                btn.disabled = true;
+            }
+            container.innerHTML = '<div class="loading"></div>';
+
+            try {
+                const res = await fetch('/api/hot');
+                const data = await res.json();
+                const questions = data.data || MOCK_HOT;
+                // 永久存储热榜数据
+                localStorage.setItem('zhihu_hot_questions', JSON.stringify(questions));
+                renderQuestions(questions, data.mock);
+            } catch (e) {
+                // 如果请求失败，尝试使用缓存
+                const cached = localStorage.getItem('zhihu_hot_questions');
+                if (cached) {
+                    try {
+                        renderQuestions(JSON.parse(cached), true);
+                    } catch (e2) {
+                        renderQuestions(MOCK_HOT, true);
+                    }
+                } else {
+                    renderQuestions(MOCK_HOT, true);
+                }
+            } finally {
+                if (btn) {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        function renderQuestions(questions, isMock) {
+            const container = document.getElementById('hot-questions');
+            let html = '';
+            for (const q of questions) {
+                const content = (q.excerpt || q.content || q.Summary || '').replace(/`/g, '`');
+                const thumbHtml = q.thumbnail ? '<img src="' + q.thumbnail + '" style="max-width:100%;max-height:150px;border-radius:8px;margin:10px 0;">' : '';
+                const mockBadge = isMock ? '<span class="mock-badge">MOCK</span>' : '';
+                html += '<div class="question-card" onclick="toggleCard(this)">' +
+                    '<div class="card-header">' +
+                    '<div class="card-title">' + q.title + '</div>' +
+                    '<div class="card-meta"><span>LINK: ' + (q.url || '') + '</span>' + mockBadge + '</div>' +
+                    '</div>' +
+                    '<div class="card-details">' +
+                    '<div class="detail-content">' + (q.excerpt || q.content || q.Summary || q.title) + '</div>' +
+                    thumbHtml +
+                    '<button class="analyze-btn" onclick="event.stopPropagation(); analyzeQuestion(\'' + q.id + '\', \'' + q.title.replace(/'/g, "\\'") + '\', \'' + content.replace(/'/g, "\\'") + '\')">[ ANALYZE ]</button>' +
+                    '<div class="analysis-result" id="analysis-' + q.id + '"></div>' +
+                    '</div></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function toggleCard(card) {
+            const details = card.querySelector('.card-details');
+            details.classList.toggle('active');
+        }
+
+        async function analyzeQuestion(id, title, content) {
+            const resultDiv = document.getElementById('analysis-' + id);
+            if (!resultDiv) {
+                console.error('Result div not found:', 'analysis-' + id);
+                alert('分析容器未找到');
+                return;
+            }
+            resultDiv.classList.add('active');
+            resultDiv.innerHTML = '<div class="progress-container">' +
+                '<div class="progress-step running" id="step-search-' + id + '"><span class="step-icon running">1</span><span id="step-text-search-' + id + '">并行搜索知乎+全网...</span></div>' +
+                '<div class="progress-step pending" id="step-cards-' + id + '"><span class="step-icon pending">2</span><span id="step-text-cards-' + id + '">生成知识卡片...</span></div>' +
+                '<div class="progress-step pending" id="step-angle-' + id + '"><span class="step-icon pending">3</span><span id="step-text-angle-' + id + '">生成新角度...</span></div>' +
+                '</div>' +
+                '<div id="thinking-' + id + '" style="margin:10px 0;padding:10px;background:#0a0a0a;border:1px solid #003300;font-size:0.85rem;color:#888;">' +
+                '<div style="color:#ff6600;margin-bottom:5px;">[ AI 思考中 ]</div>' +
+                '<div id="thinking-text-' + id + '" style="color:#aaa;" class="thinking-pulse">正在并行搜索知乎和全网...</div>' +
+                '</div>' +
+                '<div id="analysis-content-' + id + '"></div>';
+
+            // 显示思考中
+            const thinkingDiv = document.getElementById('thinking-' + id);
+            const thinkEl3 = document.getElementById('thinking-text-' + id);
+            if (thinkingDiv) thinkingDiv.style.display = 'block';
+
+            // 使用流式 fetch 获取进度
+            try {
+                const response = await fetch('/api/analyze/stream', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({title: title, content: content})
+                });
+
+                if (!response.ok) {
+                    throw new Error('API request failed: ' + response.status);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let eventCount = 0;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    buffer += chunk;
+
+                    // 调试：显示收到的原始数据
+                    console.log('[SSE chunk]', chunk);
+
+                    // 处理完整的事件块 (event: xxx\ndata: yyy\n\n)
+                    // data 部分可能包含换行符，需要找到 \n\n 结尾
+                    let eventStart = buffer.indexOf('\nevent: ');
+                    let lastEventStart = buffer.lastIndexOf('\nevent: ');
+                    let endMarker = '\n\n';
+
+                    // 找到所有完整的事件
+                    let searchStart = 0;
+                    while (true) {
+                        let eventPos = buffer.indexOf('\nevent: ', searchStart);
+                        if (eventPos === -1) break;
+
+                        // 这个事件的开始位置
+                        let thisEventStart = eventPos + 1; // 去掉开头的 \n
+
+                        // 下一个事件开始位置（如果存在）
+                        let nextEventPos = buffer.indexOf('\nevent: ', thisEventStart + 1);
+                        let eventEnd = nextEventPos === -1 ? buffer.length : nextEventPos;
+
+                        // 提取这个事件块（从 event: 到下一个 event: 之前）
+                        let eventBlock = buffer.substring(thisEventStart, eventEnd);
+
+                        // 检查是否有 data 部分
+                        let dataMatch = eventBlock.match(/^event: ([^\n]+)\ndata: ([\s\S]*?)$/);
+                        if (dataMatch) {
+                            const eventType = dataMatch[1];
+                            const eventData = dataMatch[2];
+                            eventCount++;
+                            console.log('[SSE event ' + eventCount + ']', eventType, '->', eventData.substring(0, 50) + '...');
+                            handleSSEEvent(id, eventType, eventData);
+                        }
+
+                        searchStart = eventEnd;
+                        if (nextEventPos === -1) break;
+                    }
+                    // 清理已处理的内容，保留未完成的尾部
+                    let lastNewEventPos = buffer.lastIndexOf('\nevent: ');
+                    if (lastNewEventPos !== -1) {
+                        let nextPos = buffer.indexOf('\nevent: ', lastNewEventPos + 1);
+                        if (nextPos !== -1) {
+                            buffer = buffer.substring(nextPos);
+                        } else {
+                            buffer = buffer.substring(lastNewEventPos);
+                        }
+                    } else {
+                        // 没有更多事件，检查是否还有未完成的数据
+                        let dataPos = buffer.indexOf('\ndata: ');
+                        if (dataPos !== -1) {
+                            buffer = buffer.substring(dataPos);
+                        } else {
+                            buffer = '';
+                        }
+                    }
+                }
+
+                console.log('[SSE done] buffer remaining:', buffer);
+
+                // 完成后清理思考显示
+                if (thinkingDiv) thinkingDiv.style.display = 'none';
+
+            } catch (e) {
+                console.error('Analyze error:', e);
+                const stepSearch = document.getElementById('step-search-' + id);
+                if (stepSearch) {
+                    stepSearch.className = 'progress-step error';
+                    const icon = stepSearch.querySelector('.step-icon');
+                    if (icon) {
+                        icon.className = 'step-icon error';
+                        icon.textContent = 'X';
+                    }
+                }
+                const contentDiv = document.getElementById('analysis-content-' + id);
+                if (contentDiv) {
+                    contentDiv.innerHTML = '<p style="color:#ff3333;">分析失败: ' + e.message + '</p>';
+                }
+            }
+        }
+
+        function handleSSEEvent(id, eventType, data) {
+            switch (eventType) {
+                case 'status':
+                    // 更新当前正在运行的状态
+                    // 如果 step1 是 running，说明还在搜索，更新 step1
+                    // 如果 step1 是 done，step2 是 pending，说明 AI 生成开始了，把 step2 设为 running
+                    const step1Check = document.getElementById('step-search-' + id);
+                    const step2Check = document.getElementById('step-cards-' + id);
+
+                    if (step1Check && step1Check.classList.contains('running')) {
+                        const textSpan = step1Check.querySelector('span:last-child');
+                        if (textSpan) textSpan.textContent = data;
+                    } else if (step2Check && step2Check.classList.contains('pending')) {
+                        // AI 生成阶段开始了，把 step2 设为 running
+                        step2Check.className = 'progress-step running';
+                        const icon2 = step2Check.querySelector('.step-icon');
+                        if (icon2) {
+                            icon2.className = 'step-icon running';
+                        }
+                        const text2Span = document.getElementById('step-text-cards-' + id);
+                        if (text2Span) text2Span.textContent = 'AI 生成中...';
+                    } else if (step2Check && step2Check.classList.contains('running')) {
+                        // step2 已经在 running，更新它的文字
+                        const text2Span = document.getElementById('step-text-cards-' + id);
+                        if (text2Span) text2Span.textContent = data;
+                    }
+
+                    // 更新思考框中的文字
+                    const thinkEl2 = document.getElementById('thinking-text-' + id);
+                    if (thinkEl2) thinkEl2.textContent = 'AI 正在深度思考，请稍候...';
+                    break;
+
+                case 'search_count':
+                    // 显示找到多少个回答
+                    const countText = document.getElementById('step-text-search-' + id);
+                    if (countText) countText.textContent = '已找到 ' + data + ' 个回答';
+                    break;
+
+                case 'search_done':
+                    // 搜索完成
+                    const step1 = document.getElementById('step-search-' + id);
+                    if (step1) {
+                        step1.className = 'progress-step done';
+                        const icon = step1.querySelector('.step-icon');
+                        if (icon) {
+                            icon.className = 'step-icon done';
+                            icon.textContent = 'V';
+                        }
+                    }
+                    // 激活步骤2
+                    const step2Pending = document.getElementById('step-cards-' + id);
+                    if (step2Pending) {
+                        step2Pending.className = 'progress-step running';
+                        const icon2 = step2Pending.querySelector('.step-icon');
+                        if (icon2) {
+                            icon2.className = 'step-icon running';
+                        }
+                        const text2Span = document.getElementById('step-text-cards-' + id);
+                        if (text2Span) text2Span.textContent = 'AI 生成中...';
+                    }
+                    // 显示搜索摘要
+                    const thinkEl = document.getElementById('thinking-text-' + id);
+                    if (thinkEl) thinkEl.textContent = '已获取搜索结果，AI 正在深度思考...';
+                    break;
+
+                case 'cards_done':
+                    // 知识卡片生成完成
+                    const step2 = document.getElementById('step-cards-' + id);
+                    if (step2) {
+                        step2.className = 'progress-step done';
+                        const icon = step2.querySelector('.step-icon');
+                        if (icon) {
+                            icon.className = 'step-icon done';
+                            icon.textContent = 'V';
+                        }
+                    }
+                    const text2 = document.getElementById('step-text-cards-' + id);
+                    if (text2) text2.textContent = '完成';
+                    break;
+
+                case 'angle_done':
+                    // 新角度生成完成
+                    const step3 = document.getElementById('step-angle-' + id);
+                    if (step3) {
+                        step3.className = 'progress-step done';
+                        const icon = step3.querySelector('.step-icon');
+                        if (icon) {
+                            icon.className = 'step-icon done';
+                            icon.textContent = 'V';
+                        }
+                    }
+                    const text3 = document.getElementById('step-text-angle-' + id);
+                    if (text3) text3.textContent = '完成';
+                    break;
+
+                case 'done':
+                    // 全部完成 - 渲染结果
+                    console.log('[SSE done] raw data length:', data.length, 'preview:', data.substring(0, 100));
+                    try {
+                        const result = JSON.parse(data);
+                        console.log('[SSE done] parsed OK, cards:', (result.cards || '').length, 'angle:', (result.angle || '').length);
+                        renderAnalysis(id, { cards: result.cards || '', new_angle: result.angle || '' });
+                        console.log('[SSE done] renderAnalysis called');
+                    } catch (e) {
+                        console.error('[SSE done] JSON parse failed:', e.message, 'data was:', data.substring(0, 200));
+                        renderAnalysis(id, { cards: '', new_angle: '' });
+                    }
+                    break;
+
+                case 'error':
+                    const stepE = document.getElementById('step-search-' + id);
+                    if (stepE) {
+                        stepE.className = 'progress-step error';
+                        const icon = stepE.querySelector('.step-icon');
+                        if (icon) {
+                            icon.className = 'step-icon error';
+                            icon.textContent = 'X';
+                        }
+                    }
+                    break;
+            }
+        }
+
+        // 简单的Markdown转HTML
+        function mdToHtml(md) {
+            if (!md) return '';
+            let html = md;
+
+            // 标题
+            html = html.replace(/^### (.+)$/gm, '<h3 style="color:#0f0;font-size:1.1rem;margin:15px 0 8px;border-left:3px solid #0f0;padding-left:10px;">$1</h3>');
+            html = html.replace(/^## (.+)$/gm, '<h2 style="color:#0f0;font-size:1.2rem;margin:20px 0 10px;border-bottom:1px solid #333;padding-bottom:5px;">$1</h2>');
+            html = html.replace(/^# (.+)$/gm, '<h1 style="color:#0f0;font-size:1.4rem;margin:20px 0 10px;">$1</h1>');
+
+            // 粗体
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff;">$1</strong>');
+
+            // 列表
+            html = html.replace(/^- (.+)$/gm, '<li style="margin:5px 0 5px 20px;color:#aaa;">$1</li>');
+            html = html.replace(/^(\d+)\. (.+)$/gm, '<li style="margin:5px 0 5px 20px;color:#aaa;">$2</li>');
+
+            // 引用块
+            html = html.replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid #0f0;margin:10px 0;padding:5px 15px;color:#888;font-style:italic;background:#0a0a0a;">$1</blockquote>');
+
+            // 分割线
+            html = html.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #333;margin:15px 0;">');
+
+            // 段落分隔
+            html = html.replace(/\n\n/g, '<br><br>');
+            html = '<div style="margin:10px 0;color:#ccc;">' + html + '</div>';
+
+            return html;
+        }
+
+        function renderAnalysis(id, data) {
+            console.log('[renderAnalysis] called with id:', id, 'cards length:', (data.cards || '').length, 'new_angle length:', (data.new_angle || '').length);
+            const contentDiv = document.getElementById('analysis-content-' + id);
+            console.log('[renderAnalysis] contentDiv:', contentDiv);
+            if (!contentDiv) {
+                console.log('[renderAnalysis] element not found!');
+                return;
+            }
+
+            let html = '<div class="knowledge-cards">';
+            html += '<h4 style="color:#0f0;font-size:1.2rem;margin:15px 0;border-bottom:1px solid #333;padding-bottom:10px;">[ 知识卡片 ]</h4>';
+
+            const cards = data.cards || [];
+            if (typeof cards === 'string' && cards.trim()) {
+                html += '<div class="knowledge-card" style="background:#0a0a0a;padding:15px;border-radius:8px;margin:10px 0;">' + mdToHtml(cards) + '</div>';
+            } else if (Array.isArray(cards) && cards.length > 0) {
+                cards.forEach(function(card) {
+                    if (typeof card === 'object' && card.text) {
+                        html += '<div class="knowledge-card" style="background:#0a0a0a;padding:15px;border-radius:8px;margin:10px 0;">' + mdToHtml(card.text) + '</div>';
+                    }
+                });
+            } else {
+                html += '<div class="knowledge-card"><p style="color:#888;">暂无知识卡片内容</p></div>';
+            }
+
+            if (data.new_angle) {
+                html += '<div class="new-angle" style="margin-top:20px;">';
+                html += '<h4 style="color:#0f0;font-size:1.2rem;margin:15px 0;border-bottom:1px solid #333;padding-bottom:10px;">[ 新角度推荐 ]</h4>';
+                html += '<div style="background:#0a0a0a;padding:15px;border-radius:8px;">' + mdToHtml(data.new_angle) + '</div>';
+                html += '</div>';
+            }
+            html += '</div>';
+            contentDiv.innerHTML = html;
+        }
+
+        async function searchQuestion() {
+            const input = document.getElementById('question-input');
+            const resultDiv = document.getElementById('search-result');
+            const query = input.value.trim();
+
+            if (!query) {
+                alert('请输入问题关键词');
+                return;
+            }
+
+            resultDiv.classList.add('active');
+            resultDiv.innerHTML = '<div class="progress-container" id="search-progress"><div class="progress-step running" id="search-step-1"><span class="step-icon running">🔍</span><span>搜索知乎...</span></div></div>';
+
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000);
+                const res = await fetch('/api/question?q=' + encodeURIComponent(query), {signal: controller.signal});
+                clearTimeout(timeout);
+
+                // 搜索完成
+                const step1 = document.getElementById('search-step-1');
+                if (step1) {
+                    step1.className = 'progress-step done';
+                    step1.querySelector('.step-icon').textContent = '✓';
+                    step1.querySelector('span:last-child').textContent = '搜索完成';
+                }
+
+                const data = await res.json();
+                if (data.success) {
+                    const q = data.data;
+                    const answersCount = q.answers ? q.answers.length : 0;
+                    let answersHtml = '';
+                    if (answersCount > 0 && q.answers[0].content) {
+                        answersHtml = '<div style="margin-top:15px;"><h5 style="color:#0f0;margin-bottom:10px;">精彩回答:</h5>';
+                        q.answers.slice(0, 3).forEach((ans, i) => {
+                            answersHtml += '<div style="background:#0a0a0a;padding:10px;margin:5px 0;border-radius:5px;font-size:0.9rem;">' +
+                                '<div style="color:#888;">👤 ' + (ans.author || '匿名') + ' 👍 ' + (ans.voteup || 0) + '</div>' +
+                                '<div style="color:#ddd;margin-top:5px;">' + (ans.content || '').substring(0, 200) + '...</div></div>';
+                        });
+                        answersHtml += '</div>';
+                    }
+                    const escapedTitle = (q.title || query).replace(/'/g, "\\'");
+                    const escapedContent = (q.excerpt || q.content || '').replace(/'/g, "\\'").replace(/\n/g, '\\n');
+                    const resultHtml = '<h4 style="color:#0f0;margin-bottom:15px;">[ ' + (q.title || query) + ' ]</h4><div class="detail-content">' + (q.excerpt || q.content || '') + '</div><div style="color:#888;font-size:0.85rem;margin:10px 0;">[ ' + answersCount + ' 个回答 ]</div>' + answersHtml + '<button class="analyze-btn" id="analyze-btn-search">[ ANALYZE ]</button><div class="analysis-result" id="analysis-search" style="margin-top:15px;"></div>';
+                    document.getElementById('search-result').innerHTML = resultHtml;
+                    document.getElementById('analyze-btn-search').addEventListener('click', function() {
+                        analyzeQuestion('search', escapedTitle, escapedContent);
+                    });
+                } else {
+                    resultDiv.innerHTML = '<p style="color:#ff3333;">搜索失败</p>';
+                }
+            } catch (e) {
+                const step1 = document.getElementById('search-step-1');
+                if (step1) {
+                    step1.className = 'progress-step error';
+                    step1.querySelector('.step-icon').textContent = '✗';
+                    step1.querySelector('span:last-child').textContent = '搜索失败';
+                }
+                resultDiv.innerHTML += '<p style="color:#ff3333;">网络错误: ' + e.message + '</p>';
+            }
+        }
+
+        document.getElementById('question-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchQuestion();
+        });
+
+        // 检查登录状态并显示用户信息
+        async function checkLoginStatus() {
+            try {
+                const res = await fetch('/api/me');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('user-info').style.display = 'inline';
+                    document.getElementById('user-name').textContent = data.user.fullname;
+                    document.getElementById('user-avatar').src = data.user.avatar_url || '';
+                    document.getElementById('login-btn').style.display = 'none';
+                } else {
+                    document.getElementById('user-info').style.display = 'none';
+                    document.getElementById('login-btn').style.display = 'inline';
+                }
+            } catch (e) {
+                document.getElementById('user-info').style.display = 'none';
+                document.getElementById('login-btn').style.display = 'inline';
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+                window.location.href = '/';
+            } catch (e) {
+                console.error('Logout error:', e);
+            }
+        }
+
+        checkLoginStatus();
+        loadHotQuestions(false);
+    </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Environment and config files with secrets
+config.py
+.env
+.env.local
+*.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+/tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
