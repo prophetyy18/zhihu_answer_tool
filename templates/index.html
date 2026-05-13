@@ -198,7 +198,7 @@
 
         .detail-content {
             font-size: 0.9rem;
-            color: #aaa;
+            color: #ccc;
             line-height: 1.7;
             margin-bottom: 15px;
             white-space: pre-wrap;
@@ -258,7 +258,27 @@
         }
 
         .search-input::placeholder {
-            color: #555;
+            color: #666;
+        }
+
+        /* 斜体内容高对比度 */
+        .detail-content em, .knowledge-card em {
+            color: #fff !important;
+            font-style: normal;
+            background: rgba(0, 255, 0, 0.1);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        /* 引用块斜体更清晰 */
+        .quote-block {
+            color: #ddd !important;
+            font-style: italic;
+            border-left: 3px solid #ff6600;
+            background: #0a0a0a;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 0 5px 5px 0;
         }
 
         .search-btn {
@@ -854,7 +874,10 @@
             html = html.replace(/^(\d+)\. (.+)$/gm, '<li style="margin:5px 0 5px 20px;color:#aaa;">$2</li>');
 
             // 引用块
-            html = html.replace(/^> (.+)$/gm, '<blockquote style="border-left:3px solid #0f0;margin:10px 0;padding:5px 15px;color:#888;font-style:italic;background:#0a0a0a;">$1</blockquote>');
+            html = html.replace(/^> (.+)$/gm, '<blockquote class="quote-block">$1</blockquote>');
+
+            // 斜体变高亮
+            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
 
             // 分割线
             html = html.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #333;margin:15px 0;">');
@@ -901,6 +924,17 @@
             contentDiv.innerHTML = html;
         }
 
+        function toggleAnswer(btn, fullContent) {
+            const contentEl = btn.previousElementSibling;
+            if (btn.textContent.includes('展开')) {
+                contentEl.textContent = fullContent;
+                btn.textContent = '[ 点击收起 ]';
+            } else {
+                contentEl.textContent = fullContent.substring(0, 200) + '...';
+                btn.textContent = '[ 点击展开 ]';
+            }
+        }
+
         async function searchQuestion() {
             const input = document.getElementById('question-input');
             const resultDiv = document.getElementById('search-result');
@@ -936,9 +970,12 @@
                     if (answersCount > 0 && q.answers[0].content) {
                         answersHtml = '<div style="margin-top:15px;"><h5 style="color:#0f0;margin-bottom:10px;">精彩回答:</h5>';
                         q.answers.slice(0, 3).forEach((ans, i) => {
+                            const shortContent = (ans.content || '').substring(0, 200);
+                            const hasMore = (ans.content || '').length > 200;
                             answersHtml += '<div style="background:#0a0a0a;padding:10px;margin:5px 0;border-radius:5px;font-size:0.9rem;">' +
                                 '<div style="color:#888;">👤 ' + (ans.author || '匿名') + ' 👍 ' + (ans.voteup || 0) + '</div>' +
-                                '<div style="color:#ddd;margin-top:5px;">' + (ans.content || '').substring(0, 200) + '...</div></div>';
+                                '<div class="answer-content" id="answer-' + i + '-' + id + '" style="color:#ddd;margin-top:5px;">' + shortContent + (hasMore ? '...' : '') + '</div>' +
+                                (hasMore ? '<button class="expand-btn" onclick="toggleAnswer(this, \'' + (ans.content || '').replace(/'/g, "\\'") + '\')" style="background:transparent;color:#ff6600;border:1px solid #ff6600;padding:4px 8px;cursor:pointer;font-size:0.8rem;margin-top:5px;">[ 点击展开 ]</button>' : '') + '</div>';
                         });
                         answersHtml += '</div>';
                     }
