@@ -970,68 +970,53 @@
                     console.log('[SSE chunk]', chunk);
 
                     // 处理完整的事件块 (event: xxx\ndata: yyy\n\n)
-                    // data 部分可能包含换行符，需要找到 \n\n 结尾
-                    let eventStart = buffer.indexOf('\nevent: ');
-                    let lastEventStart = buffer.lastIndexOf('\nevent: ');
-                    let endMarker = '\n\n';
-
-                    // 找到所有完整的事件
-                    let searchStart = 0;
+                    // 每个 event 块以 \n\n 结尾
+                    let processPos = 0;
                     while (true) {
-                        let eventPos = buffer.indexOf('\nevent: ', searchStart);
+                        // 找到下一个 event: 的位置
+                        let eventPos = buffer.indexOf('\nevent: ', processPos);
                         if (eventPos === -1) break;
 
-                        // 这个事件的开始位置
-                        let thisEventStart = eventPos + 1; // 去掉开头的 \n
+                        // 找到这个 event 的 \n\n 结尾
+                        let eventDataStart = eventPos + 8; // skip \nevent:
+                        let eventEnd = buffer.indexOf('\n\n', eventDataStart);
+                        if (eventEnd === -1) {
+                            // 还没收到完整的 event，保留剩余 buffer
+                            buffer = buffer.substring(eventPos);
+                            break;
+                        }
 
-                        // 下一个事件开始位置（如果存在）
-                        let nextEventPos = buffer.indexOf('\nevent: ', thisEventStart + 1);
-                        let eventEnd = nextEventPos === -1 ? buffer.length : nextEventPos;
-
-                        // 提取这个事件块（从 event: 到下一个 event: 之前）
-                        let eventBlock = buffer.substring(thisEventStart, eventEnd);
-
-                        // 检查是否有 data 部分
-                        let dataMatch = eventBlock.match(/^event: ([^\n]+)\ndata: ([\s\S]*?)$/);
-                        if (dataMatch) {
-                            const eventType = dataMatch[1];
-                            const eventData = dataMatch[2];
+                        // 提取这个事件的数据 (event: 和 data: 之间)
+                        let dataStart = buffer.indexOf('\ndata: ', eventPos);
+                        if (dataStart !== -1 && dataStart < eventEnd) {
+                            let eventType = buffer.substring(eventPos + 8, dataStart).trim(); // skip '\nevent: '
+                            let eventData = buffer.substring(dataStart + 8, eventEnd);
                             eventCount++;
                             console.log('[SSE event ' + eventCount + ']', eventType, '->', eventData.substring(0, 50) + '...');
                             handleSSEEvent(id, eventType, eventData);
                         }
 
-                        searchStart = eventEnd;
-                        if (nextEventPos === -1) break;
+                        processPos = eventEnd + 2;
                     }
-                    // 清理已处理的内容，保留未完成的尾部
-                    let lastNewEventPos = buffer.lastIndexOf('\nevent: ');
-                    if (lastNewEventPos !== -1) {
-                        let nextPos = buffer.indexOf('\nevent: ', lastNewEventPos + 1);
-                        if (nextPos !== -1) {
-                            buffer = buffer.substring(nextPos);
-                        } else {
-                            // 检查是否有未完成的 data
-                            let afterLastEvent = buffer.substring(lastNewEventPos + 8); // skip '\nevent: '
-                            let dataPos = afterLastEvent.indexOf('\ndata: ');
-                            if (dataPos !== -1) {
-                                buffer = buffer.substring(lastNewEventPos);
-                            } else {
-                                buffer = '';
-                            }
-                        }
-                    } else {
-                        buffer = '';
-                    }
+
+                    // 清理已处理的内容，保留 processPos 之后的部分
+                    buffer = buffer.substring(processPos);
                 }
 
                 // 处理流结束后 buffer 中可能残留的事件（包括 angle_done）
                 if (buffer.trim()) {
                     console.log('[SSE stream end] processing remaining buffer:', buffer.substring(0, 100));
                     // 查找最后一个完整事件
-                    let eventMatch = buffer.match(/event: ([^\n]+)\ndata: ([\s\S]*?)$/);
-                    if (eventMatch) {
-                        handleSSEEvent(id, eventMatch[1], eventMatch[2]);
+                    let eventPos = buffer.indexOf('\nevent: ');
+                    let eventDataStart = eventPos + 8;
+                    let eventEnd = buffer.indexOf('\n\n', eventDataStart);
+                    if (eventEnd !== -1) {
+                        let dataStart = buffer.indexOf('\ndata: ', eventPos);
+                        if (dataStart !== -1 && dataStart < eventEnd) {
+                            let eventType = buffer.substring(eventPos + 8, dataStart).trim();
+                            let eventData = buffer.substring(dataStart + 8, eventEnd);
+                            handleSSEEvent(id, eventType, eventData);
+                        }
                     }
                 }
 
