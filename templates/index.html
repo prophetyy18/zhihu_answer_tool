@@ -421,6 +421,274 @@
             animation: blink 1.5s infinite;
         }
 
+        /* ==================== ZHIHU THEME ==================== */
+        body.zhihu-theme {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f4f5f5;
+            color: #1a1a1a;
+        }
+
+        body.zhihu-theme::before,
+        body.zhihu-theme::after {
+            display: none;
+        }
+
+        body.zhihu-theme .container {
+            max-width: 800px;
+        }
+
+        body.zhihu-theme .header {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 20px 24px;
+        }
+
+        body.zhihu-theme .header h1 {
+            color: #0066ff;
+            font-size: 1.5rem;
+            text-shadow: none;
+            letter-spacing: 0;
+            font-weight: 600;
+        }
+
+        body.zhihu-theme .header p {
+            color: #999;
+            font-size: 0.9rem;
+            opacity: 1;
+        }
+
+        body.zhihu-theme .section-title {
+            color: #1a1a1a;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        body.zhihu-theme .section-title::before {
+            content: "";
+        }
+
+        body.zhihu-theme .refresh-btn {
+            color: #0066ff;
+            border: 1px solid #0066ff;
+            border-radius: 4px;
+            box-shadow: none;
+        }
+
+        body.zhihu-theme .refresh-btn:hover {
+            background: #0066ff;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(0,102,255,0.3);
+        }
+
+        body.zhihu-theme .logout-btn:hover {
+            background: #ff6600;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(255,102,0,0.3);
+        }
+
+        body.zhihu-theme .hot-section {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        body.zhihu-theme .question-card {
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            background: #fff;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+
+        body.zhihu-theme .question-card:hover {
+            border-color: #0066ff;
+            box-shadow: 0 2px 12px rgba(0,102,255,0.15);
+        }
+
+        body.zhihu-theme .card-header {
+            border-bottom: 1px solid #f0f0f0;
+            padding: 16px;
+        }
+
+        body.zhihu-theme .card-title {
+            color: #1a1a1a;
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        body.zhihu-theme .card-meta {
+            color: #999;
+            font-size: 0.85rem;
+        }
+
+        body.zhihu-theme .card-details {
+            background: #fafafa;
+            border-radius: 0 0 8px 8px;
+        }
+
+        body.zhihu-theme .detail-content {
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        body.zhihu-theme .analyze-btn {
+            color: #fff;
+            background: linear-gradient(135deg, #0066ff, #0052cc);
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,102,255,0.3);
+        }
+
+        body.zhihu-theme .analyze-btn:hover {
+            background: linear-gradient(135deg, #0052cc, #003d99);
+            box-shadow: 0 4px 16px rgba(0,102,255,0.4);
+        }
+
+        body.zhihu-theme .search-section {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+        }
+
+        body.zhihu-theme .search-section h3 {
+            color: #1a1a1a;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        body.zhihu-theme .search-input {
+            border: 1px solid #e8e8e8;
+            background: #fff;
+            color: #1a1a1a;
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+        }
+
+        body.zhihu-theme .search-input:focus {
+            border-color: #0066ff;
+            box-shadow: 0 0 0 3px rgba(0,102,255,0.1);
+        }
+
+        body.zhihu-theme .search-input::placeholder {
+            color: #999;
+        }
+
+        body.zhihu-theme .search-btn {
+            background: linear-gradient(135deg, #0066ff, #0052cc);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 12px 24px;
+            box-shadow: 0 2px 8px rgba(0,102,255,0.3);
+        }
+
+        body.zhihu-theme .search-btn:hover {
+            background: linear-gradient(135deg, #0052cc, #003d99);
+            box-shadow: 0 4px 16px rgba(0,102,255,0.4);
+        }
+
+        body.zhihu-theme .expand-btn {
+            background: transparent;
+            color: #0066ff;
+            border: 1px solid #0066ff;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        body.zhihu-theme .expand-btn:hover {
+            background: #0066ff;
+            color: #fff;
+        }
+
+        body.zhihu-theme .analysis-result {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+        }
+
+        body.zhihu-theme .knowledge-card {
+            background: #fff;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            border-left: 4px solid #0066ff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        body.zhihu-theme .knowledge-card h4 {
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        body.zhihu-theme .new-angle {
+            background: #fff;
+            border: 1px solid #ff6600;
+            border-radius: 8px;
+            color: #ff6600;
+        }
+
+        body.zhihu-theme .new-angle h4 {
+            color: #ff6600;
+            font-weight: 600;
+        }
+
+        body.zhihu-theme .progress-step.running { color: #0066ff; }
+        body.zhihu-theme .progress-step.done { color: #00b96b; }
+        body.zhihu-theme .step-icon.running { color: #0066ff; animation: pulse 1s infinite; }
+        body.zhihu-theme .step-icon.done { color: #00b96b; }
+
+        body.zhihu-theme .mock-badge {
+            color: #ff6600;
+            border-color: #ff6600;
+        }
+
+        body.zhihu-theme .loading {
+            color: #0066ff;
+        }
+
+        body.zhihu-theme .loading::before {
+            content: "加载中...";
+        }
+
+        /* 主题切换按钮 */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        body.zhihu-theme .theme-toggle {
+            background: #1a1a1a;
+            color: #fff;
+            border-color: #1a1a1a;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -480,6 +748,7 @@
     </style>
 </head>
 <body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题" id="themeBtn">🎨</button>
     <div class="container">
         <div class="header">
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -1035,6 +1304,23 @@
 
         checkLoginStatus();
         loadHotQuestions(false);
+
+        // 主题切换
+        function toggleTheme() {
+            document.body.classList.toggle('zhihu-theme');
+            const isZhihu = document.body.classList.contains('zhihu-theme');
+            localStorage.setItem('zhihu-theme', isZhihu ? 'zhihu' : 'terminal');
+            document.getElementById('themeBtn').textContent = isZhihu ? '💻' : '🎨';
+        }
+
+        // 页面加载时恢复主题
+        (function() {
+            const saved = localStorage.getItem('zhihu-theme');
+            if (saved === 'zhihu') {
+                document.body.classList.add('zhihu-theme');
+                document.getElementById('themeBtn').textContent = '💻';
+            }
+        })();
     </script>
 </body>
 </html>
