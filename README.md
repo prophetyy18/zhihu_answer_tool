@@ -2,7 +2,7 @@
 
 > 基于 AI 的知乎内容深度分析与知识卡片生成工具
 
-[在线演示](https://realtors-founder-cornell-functions.trycloudflare.com) | [Karpatkey](https://karpatkey.com)
+[在线演示](https://submit-experiments-penetration-happens.trycloudflare.com) | [Karpatkey](https://karpatkey.com)
 
 ---
 
